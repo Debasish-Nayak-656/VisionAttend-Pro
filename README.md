@@ -176,14 +176,14 @@ The system features a dark cyberpunk-inspired UI with:
 ## 👤 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [yourprofile](https://linkedin.com)
+- GitHub: (https://github.com/Debasish-Nayak-656/))
+- LinkedIn: (https://www.linkedin.com/in/debasish-nayak-dn556/))
 
 ---
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+Apache License — see [LICENSE](LICENSE) for details.
 
 ---
 
