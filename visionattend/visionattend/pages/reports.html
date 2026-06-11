@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionAttend 4.0 — Reports</title>
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .report-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+  .full-width{grid-column:1/-1;}
+  .export-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:6px;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:1px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-secondary);transition:all .2s;}
+  .export-btn:hover{border-color:var(--border-bright);color:var(--cyan);}
+  table{width:100%;border-collapse:collapse;}
+  th{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);}
+  td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(0,229,255,0.04);}
+  tr:hover td{background:rgba(0,229,255,0.03);}
+  tr:last-child td{border-bottom:none;}
+  .pct-bar{display:flex;align-items:center;gap:8px;}
+  .pct-track{flex:1;height:4px;background:var(--bg-elevated);border-radius:2px;overflow:hidden;}
+  .pct-fill{height:100%;border-radius:2px;}
+  .summary-stat{text-align:center;padding:16px;}
+  .summary-val{font-family:var(--font-display);font-size:32px;font-weight:700;}
+  .summary-lbl{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-top:4px;}
+  .date-range{display:flex;align-items:center;gap:10px;}
+  .date-input{background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:11px;outline:none;}
+  .date-input:focus{border-color:var(--border-bright);}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/><circle cx="22" cy="22" r="13" stroke="#00e5ff" stroke-width="1" opacity="0.8"/><ellipse cx="22" cy="19" rx="7" ry="8" stroke="#60a5fa" stroke-width="1.5"/><path d="M11 35Q12 28 22 26Q32 28 33 35" stroke="#60a5fa" stroke-width="1.5"/><circle cx="19" cy="17" r="1.5" fill="#00e5ff"/><circle cx="25" cy="17" r="1.5" fill="#00e5ff"/><circle cx="22" cy="21" r="1.2" fill="#00e5ff"/><path d="M33 24Q36 21 33 18" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><path d="M36 26Q41 21 36 16" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><circle cx="32" cy="21" r="2" fill="#00ff9d"/></svg></div>
+      <div class="logo-text"><div class="logo-name">VISION<span>ATTEND</span></div><div class="logo-ver">v4.0 · AI + RFID</div></div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <nav>
+      <a href="../dashboard.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="students.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Students <span class="nav-badge cyan">342</span></a>
+      <a href="cameras.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Live Cameras <span class="nav-badge cyan">4</span></a>
+      <a href="reports.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Reports</a>
+      <a href="alerts.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Alerts <span class="nav-badge red">3</span></a>
+      <div class="sidebar-section">System</div>
+      <a href="settings.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-bottom"><div class="live-indicator"><div class="pulse-dot green"></div>System Online · 98.7%</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div><div class="topbar-title">Reports</div><div class="topbar-sub" id="live-clock"></div></div>
+    <div class="topbar-spacer"></div>
+    <div class="date-range">
+      <input type="date" class="date-input" value="2026-03-11">
+      <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:12px">TO</span>
+      <input type="date" class="date-input" value="2026-03-17">
+    </div>
+    <button class="export-btn" onclick="showToast('Exporting CSV...','success')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      EXPORT CSV
+    </button>
+    <button class="export-btn" onclick="showToast('Generating PDF...','info')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+      EXPORT PDF
+    </button>
+    <div class="avatar">AD</div>
+  </header>
+
+  <main class="main-content">
+    <!-- Summary row -->
+    <div class="panel full-width fade-up">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);divide-x:1px solid var(--border)">
+        <div class="summary-stat" style="border-right:1px solid var(--border)"><div class="summary-val" style="color:var(--cyan)">342</div><div class="summary-lbl">TOTAL ENROLLED</div></div>
+        <div class="summary-stat" style="border-right:1px solid var(--border)"><div class="summary-val" style="color:var(--green)">284</div><div class="summary-lbl">AVG PRESENT/DAY</div></div>
+        <div class="summary-stat" style="border-right:1px solid var(--border)"><div class="summary-val" style="color:var(--green)">83%</div><div class="summary-lbl">OVERALL RATE</div></div>
+        <div class="summary-stat" style="border-right:1px solid var(--border)"><div class="summary-val" style="color:var(--amber)">38</div><div class="summary-lbl">AVG LATE/DAY</div></div>
+        <div class="summary-stat"><div class="summary-val" style="color:var(--red)">2</div><div class="summary-lbl">PROXY BLOCKED</div></div>
+      </div>
+    </div>
+
+    <div class="report-grid">
+      <!-- Class-wise Table -->
+      <div class="panel fade-up">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <span class="panel-title">Class-wise Attendance</span>
+          <span class="tag tag-cyan">THIS WEEK</span>
+        </div>
+        <table>
+          <thead><tr><th>Class</th><th>Students</th><th>Present</th><th>Rate</th><th>Trend</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600">CSE-3A</td><td style="font-family:var(--font-mono);font-size:12px">42</td><td style="font-family:var(--font-mono);font-size:12px;color:var(--green)">39</td><td><div class="pct-bar"><div class="pct-track"><div class="pct-fill" style="width:92%;background:var(--green)"></div></div><span style="font-family:var(--font-mono);font-size:11px;color:var(--green)">92%</span></div></td><td style="color:var(--green);font-family:var(--font-mono);font-size:11px">↑ +2%</td></tr>
+            <tr><td style="font-weight:600">ECE-2B</td><td style="font-family:var(--font-mono);font-size:12px">38</td><td style="font-family:var(--font-mono);font-size:12px;color:var(--green)">33</td><td><div class="pct-bar"><div class="pct-track"><div class="pct-fill" style="width:87%;background:var(--cyan)"></div></div><span style="font-family:var(--font-mono);font-size:11px;color:var(--cyan)">87%</span></div></td><td style="color:var(--green);font-family:var(--font-mono);font-size:11px">↑ +1%</td></tr>
+            <tr><td style="font-weight:600">ME-1A</td><td style="font-family:var(--font-mono);font-size:12px">45</td><td style="font-family:var(--font-mono);font-size:12px;color:var(--amber)">36</td><td><div class="pct-bar"><div class="pct-track"><div class="pct-fill" style="width:79%;background:var(--amber)"></div></div><span style="font-family:var(--font-mono);font-size:11px;color:var(--amber)">79%</span></div></td><td style="color:var(--red);font-family:var(--font-mono);font-size:11px">↓ -3%</td></tr>
+            <tr><td style="font-weight:600">CSE-4A</td><td style="font-family:var(--font-mono);font-size:12px">40</td><td style="font-family:var(--font-mono);font-size:12px;color:var(--green)">38</td><td><div class="pct-bar"><div class="pct-track"><div class="pct-fill" style="width:95%;background:var(--green)"></div></div><span style="font-family:var(--font-mono);font-size:11px;color:var(--green)">95%</span></div></td><td style="color:var(--green);font-family:var(--font-mono);font-size:11px">↑ +3%</td></tr>
+            <tr><td style="font-weight:600">IT-2B</td><td style="font-family:var(--font-mono);font-size:12px">36</td><td style="font-family:var(--font-mono);font-size:12px;color:var(--amber)">26</td><td><div class="pct-bar"><div class="pct-track"><div class="pct-fill" style="width:71%;background:var(--amber)"></div></div><span style="font-family:var(--font-mono);font-size:11px;color:var(--amber)">71%</span></div></td><td style="color:var(--red);font-family:var(--font-mono);font-size:11px">↓ -5%</td></tr>
+            <tr><td style="font-weight:600">IT-3B</td><td style="font-family:var(--font-mono);font-size:12px">34</td><td style="font-family:var(--font-mono);font-size:12px;color:var(--red)">21</td><td><div class="pct-bar"><div class="pct-track"><div class="pct-fill" style="width:63%;background:var(--red)"></div></div><span style="font-family:var(--font-mono);font-size:11px;color:var(--red)">63%</span></div></td><td style="color:var(--red);font-family:var(--font-mono);font-size:11px">↓ -7%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- At-Risk Students -->
+      <div class="panel fade-up">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="panel-title">At-Risk Students</span>
+          <span class="tag tag-red">BELOW 75%</span>
+        </div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
+          <div style="padding:12px;background:var(--bg-elevated);border-radius:8px;border:1px solid rgba(255,68,68,0.2)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-weight:600;font-size:13px">Nidhi Kapoor</span>
+              <span style="font-family:var(--font-mono);font-size:12px;color:var(--red)">63%</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">IT-3B · STU-1788 · 14 absences</div>
+            <div class="pct-track" style="margin-top:6px"><div class="pct-fill" style="width:63%;background:var(--red)"></div></div>
+          </div>
+          <div style="padding:12px;background:var(--bg-elevated);border-radius:8px;border:1px solid rgba(255,68,68,0.2)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-weight:600;font-size:13px">Sahil Banerjee</span>
+              <span style="font-family:var(--font-mono);font-size:12px;color:var(--red)">58%</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">ECE-1B · STU-0671 · 17 absences</div>
+            <div class="pct-track" style="margin-top:6px"><div class="pct-fill" style="width:58%;background:var(--red)"></div></div>
+          </div>
+          <div style="padding:12px;background:var(--bg-elevated);border-radius:8px;border:1px solid rgba(255,179,0,0.2)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-weight:600;font-size:13px">Mohit Taneja</span>
+              <span style="font-family:var(--font-mono);font-size:12px;color:var(--amber)">71%</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">ME-2A · STU-2780 · 8 absences</div>
+            <div class="pct-track" style="margin-top:6px"><div class="pct-fill" style="width:71%;background:var(--amber)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../js/main.js"></script>
+</body>
+</html>

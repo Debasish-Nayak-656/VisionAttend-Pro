@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionAttend 4.0 — Smart Attendance System</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #050d1a;
+    --bg-surface: #0a1628;
+    --bg-card: #0d1e35;
+    --bg-elevated: #112240;
+    --cyan: #00e5ff;
+    --cyan-dim: #00b8cc;
+    --cyan-glow: rgba(0,229,255,0.15);
+    --green: #00ff9d;
+    --green-dim: #00cc7a;
+    --green-glow: rgba(0,255,157,0.12);
+    --blue: #1a6bff;
+    --blue-dim: #0f4fd6;
+    --amber: #ffb300;
+    --red: #ff4444;
+    --text-primary: #e8f4fd;
+    --text-secondary: #7ab3cc;
+    --text-muted: #3a6278;
+    --border: rgba(0,229,255,0.12);
+    --border-bright: rgba(0,229,255,0.3);
+    --font-display: 'Rajdhani', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Exo 2', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* === ANIMATED GRID BACKGROUND === */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: floatOrb 8s ease-in-out infinite;
+  }
+
+  @keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(60px, 40px); }
+  }
+
+  /* === LAYOUT === */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* === SIDEBAR === */
+  .sidebar {
+    grid-row: 1 / -1;
+    background: linear-gradient(180deg, #091526 0%, #050d1a 100%);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, var(--cyan), var(--green), transparent);
+    opacity: 0.4;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .logo-icon svg { width: 100%; height: 100%; }
+
+  .logo-text { line-height: 1; }
+  .logo-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-primary);
+  }
+  .logo-name span { color: var(--cyan); }
+  .logo-ver {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    margin-top: 2px;
+  }
+
+  .sidebar-section {
+    padding: 20px 12px 8px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    position: relative;
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover {
+    background: rgba(0,229,255,0.06);
+    color: var(--text-primary);
+    border-color: var(--border);
+  }
+
+  .nav-item.active {
+    background: rgba(0,229,255,0.1);
+    color: var(--cyan);
+    border-color: rgba(0,229,255,0.2);
+    font-weight: 600;
+  }
+
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    background: var(--cyan);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .nav-item.active .nav-icon { opacity: 1; }
+
+  .nav-badge {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: rgba(0,229,255,0.15);
+    color: var(--cyan);
+    padding: 2px 7px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,229,255,0.25);
+  }
+
+  .nav-badge.red {
+    background: rgba(255,68,68,0.15);
+    color: var(--red);
+    border-color: rgba(255,68,68,0.3);
+  }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(0,255,157,0.06);
+    border: 1px solid rgba(0,255,157,0.2);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--green);
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 6px var(--green);
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  /* === TOPBAR === */
+  .topbar {
+    background: rgba(10,22,40,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    backdrop-filter: blur(12px);
+  }
+
+  .topbar-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+  }
+
+  .topbar-subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+
+  .topbar-spacer { flex: 1; }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    width: 240px;
+    transition: border-color 0.2s;
+  }
+
+  .search-bar:focus-within { border-color: var(--border-bright); }
+
+  .search-bar input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    width: 100%;
+  }
+
+  .search-bar input::placeholder { color: var(--text-muted); }
+
+  .topbar-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .topbar-btn:hover { border-color: var(--border-bright); background: var(--bg-card); }
+
+  .notif-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    background: var(--red);
+    border-radius: 50%;
+    border: 1.5px solid var(--bg-base);
+    animation: pulse 2s infinite;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1a6bff, #00e5ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(0,229,255,0.3);
+  }
+
+  /* === MAIN CONTENT === */
+  .main-content {
+    padding: 24px 28px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* === STAT CARDS ROW === */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+
+  .stat-card:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-2px);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent, var(--cyan));
+    opacity: 0.7;
+  }
+
+  .stat-card.green { --accent: var(--green); }
+  .stat-card.amber { --accent: var(--amber); }
+  .stat-card.red   { --accent: var(--red); }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent, var(--cyan));
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-change {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+
+  .stat-icon {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    opacity: 0.08;
+    width: 48px;
+    height: 48px;
+  }
+
+  /* === TWO COLUMN GRID === */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+  }
+
+  /* === PANEL === */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    flex: 1;
+  }
+
+  .panel-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 4px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+  }
+
+  .panel-tag.green {
+    background: rgba(0,255,157,0.1);
+    border-color: rgba(0,255,157,0.2);
+    color: var(--green);
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* === LIVE FEED === */
+  .live-feed { display: flex; flex-direction: column; gap: 10px; }
+
+  .feed-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+    animation: slideIn 0.4s ease both;
+  }
+
+  .feed-item:hover { border-color: var(--border); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .feed-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1a6bff 0%, #00e5ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .feed-avatar::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-card);
+  }
+
+  .feed-avatar.verified::after { background: var(--green); }
+  .feed-avatar.pending::after  { background: var(--amber); }
+  .feed-avatar.denied::after   { background: var(--red); }
+
+  .feed-info { flex: 1; min-width: 0; }
+
+  .feed-name {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .feed-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .feed-status {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .feed-status.verified {
+    background: rgba(0,255,157,0.12);
+    color: var(--green);
+    border: 1px solid rgba(0,255,157,0.25);
+  }
+
+  .feed-status.pending {
+    background: rgba(255,179,0,0.12);
+    color: var(--amber);
+    border: 1px solid rgba(255,179,0,0.25);
+  }
+
+  .feed-status.denied {
+    background: rgba(255,68,68,0.12);
+    color: var(--red);
+    border: 1px solid rgba(255,68,68,0.25);
+  }
+
+  .feed-time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  /* === CAMERA GRID === */
+  .camera-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .camera-feed {
+    aspect-ratio: 16/10;
+    background: #060f1c;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .camera-feed:hover { border-color: var(--border-bright); }
+
+  .camera-feed.active { border-color: var(--green); }
+
+  .camera-feed.active::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,255,157,0.015) 0px, rgba(0,255,157,0.015) 1px, transparent 1px, transparent 4px);
+    animation: scanAnim 3s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  @keyframes scanAnim {
+    from { background-position: 0 0; }
+    to { background-position: 0 100px; }
+  }
+
+  .cam-label {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--green);
+    background: rgba(0,0,0,0.7);
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 3;
+  }
+
+  .cam-live {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--red);
+    background: rgba(0,0,0,0.7);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 3;
+  }
+
+  .cam-body {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Silhouette person SVG */
+  .silhouette { opacity: 0.07; }
+
+  /* Face detection box */
+  .detect-box {
+    position: absolute;
+    border: 1.5px solid var(--cyan);
+    border-radius: 4px;
+    animation: detectPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes detectPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(0,229,255,0); }
+  }
+
+  .detect-label {
+    position: absolute;
+    bottom: -18px;
+    left: 0;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--cyan);
+    white-space: nowrap;
+  }
+
+  .cam-overlay-text {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    z-index: 3;
+  }
+
+  /* === ATTENDANCE TABLE === */
+  .attendance-table { width: 100%; border-collapse: collapse; }
+
+  .attendance-table th {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 8px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .attendance-table td {
+    padding: 11px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(0,229,255,0.04);
+  }
+
+  .attendance-table tr:hover td { background: rgba(0,229,255,0.03); }
+  .attendance-table tr:last-child td { border-bottom: none; }
+
+  .student-cell { display: flex; align-items: center; gap: 10px; }
+
+  .mini-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .rfid-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* === DONUT CHART === */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 4px;
+  }
+
+  .donut-svg { flex-shrink: 0; }
+
+  .donut-legend { display: flex; flex-direction: column; gap: 10px; }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-label { color: var(--text-secondary); flex: 1; font-size: 12px; }
+  .legend-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  /* === BAR CHART === */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 100px; }
+
+  .bar-group { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+
+  .bar-stack { display: flex; flex-direction: column-reverse; gap: 1px; width: 100%; }
+
+  .bar {
+    width: 100%;
+    border-radius: 2px 2px 0 0;
+    transition: opacity 0.2s;
+  }
+
+  .bar:hover { opacity: 0.8; }
+  .bar-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); }
+
+  /* === RFID STATUS === */
+  .rfid-panel { display: flex; flex-direction: column; gap: 12px; }
+
+  .rfid-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .rfid-signal {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .rfid-bar {
+    width: 4px;
+    background: var(--cyan);
+    border-radius: 1px;
+    opacity: 0.3;
+  }
+
+  .rfid-bar.on { opacity: 1; }
+
+  /* === ALERT BANNER === */
+  .alert-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255,179,0,0.08);
+    border: 1px solid rgba(255,179,0,0.25);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .alert-icon { font-size: 16px; flex-shrink: 0; }
+  .alert-text { color: var(--amber); flex: 1; }
+  .alert-close {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: color 0.2s;
+  }
+  .alert-close:hover { color: var(--text-primary); }
+
+  /* === MINI PROGRESS === */
+  .progress-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px;
+  }
+
+  .prog-item { display: flex; flex-direction: column; gap: 6px; }
+  .prog-header { display: flex; justify-content: space-between; align-items: center; }
+  .prog-label { font-size: 12px; color: var(--text-secondary); }
+  .prog-val { font-family: var(--font-mono); font-size: 11px; color: var(--text-primary); }
+  .prog-track {
+    height: 4px;
+    background: var(--bg-elevated);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .prog-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* === SCROLLBAR === */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* === FADE IN ANIMATIONS === */
+  .fade-in { animation: fadeIn 0.5s ease both; }
+  .fade-in:nth-child(1) { animation-delay: 0.05s; }
+  .fade-in:nth-child(2) { animation-delay: 0.1s; }
+  .fade-in:nth-child(3) { animation-delay: 0.15s; }
+  .fade-in:nth-child(4) { animation-delay: 0.2s; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Camera mock visuals */
+  .cam-mock {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cam-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #060f1c 0%, #091826 100%);
+  }
+
+  .cam-person {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .detect-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid var(--cyan);
+    animation: ringPulse 2s ease-out infinite;
+    opacity: 0;
+  }
+
+  @keyframes ringPulse {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="22" cy="22" r="19" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/>
+          <circle cx="22" cy="22" r="13" stroke="#00e5ff" stroke-width="1" opacity="0.8"/>
+          <ellipse cx="22" cy="19" rx="7" ry="8" stroke="#60a5fa" stroke-width="1.5"/>
+          <path d="M11 35Q12 28 22 26Q32 28 33 35" stroke="#60a5fa" stroke-width="1.5"/>
+          <circle cx="19" cy="17" r="1.5" fill="#00e5ff"/>
+          <circle cx="25" cy="17" r="1.5" fill="#00e5ff"/>
+          <circle cx="22" cy="21" r="1.2" fill="#00e5ff"/>
+          <path d="M33 24Q36 21 33 18" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M36 26Q41 21 36 16" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="32" cy="21" r="2" fill="#00ff9d"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name">VISION<span>ATTEND</span></div>
+        <div class="logo-ver">v4.0 · AI + RFID</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">Navigation</div>
+
+    <nav>
+      <div class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Dashboard
+        <span class="nav-badge">Live</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Students
+        <span class="nav-badge">342</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+        </svg>
+        Live Cameras
+        <span class="nav-badge">4</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/>
+          <line x1="8" y1="17" x2="16" y2="17"/>
+        </svg>
+        Reports
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Alerts
+        <span class="nav-badge red">3</span>
+      </div>
+
+      <div class="sidebar-section">System</div>
+
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        </svg>
+        RFID Manager
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Settings
+      </div>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="live-indicator">
+        <div class="pulse-dot"></div>
+        System Online · 98.7% Uptime
+      </div>
+    </div>
+  </aside>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div>
+      <div class="topbar-title">Dashboard</div>
+      <div class="topbar-subtitle">MONDAY · 17 MAR 2026 · 09:34:12</div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="search-bar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3a6278" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" placeholder="Search student / ID...">
+    </div>
+    <div class="topbar-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7ab3cc" stroke-width="1.8">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <div class="notif-dot"></div>
+    </div>
+    <div class="topbar-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7ab3cc" stroke-width="1.8">
+        <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
+      </svg>
+    </div>
+    <div class="avatar">AD</div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- ALERT -->
+    <div class="alert-banner fade-in">
+      <span class="alert-icon">⚠</span>
+      <span class="alert-text">Gate 2 camera feed degraded — switching to backup. RFID verification active.</span>
+      <span class="alert-close" onclick="this.parentElement.remove()">✕</span>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-row">
+      <div class="stat-card fade-in">
+        <div class="stat-label">Present Today</div>
+        <div class="stat-value">284</div>
+        <div class="stat-change up">↑ +12 vs yesterday</div>
+        <svg class="stat-icon" viewBox="0 0 48 48" fill="none" stroke="#00e5ff" stroke-width="2">
+          <path d="M40 42v-4a8 8 0 0 0-8-8H16a8 8 0 0 0-8 8v4"/>
+          <circle cx="24" cy="16" r="8"/>
+        </svg>
+      </div>
+      <div class="stat-card green fade-in">
+        <div class="stat-label">Attendance Rate</div>
+        <div class="stat-value">83<span style="font-size:20px">%</span></div>
+        <div class="stat-change up">↑ +2.1% this week</div>
+        <svg class="stat-icon" viewBox="0 0 48 48" fill="none" stroke="#00ff9d" stroke-width="2">
+          <polyline points="6,36 16,24 24,30 34,18 42,24"/>
+        </svg>
+      </div>
+      <div class="stat-card amber fade-in">
+        <div class="stat-label">Pending Verify</div>
+        <div class="stat-value">7</div>
+        <div class="stat-change">Face ID mismatch</div>
+        <svg class="stat-icon" viewBox="0 0 48 48" fill="none" stroke="#ffb300" stroke-width="2">
+          <circle cx="24" cy="24" r="18"/><line x1="24" y1="16" x2="24" y2="26"/>
+          <circle cx="24" cy="32" r="1.5" fill="#ffb300"/>
+        </svg>
+      </div>
+      <div class="stat-card red fade-in">
+        <div class="stat-label">Proxy Blocked</div>
+        <div class="stat-value">2</div>
+        <div class="stat-change down">↑ +2 today</div>
+        <svg class="stat-icon" viewBox="0 0 48 48" fill="none" stroke="#ff4444" stroke-width="2">
+          <path d="M12 12l24 24M36 12L12 36"/><circle cx="24" cy="24" r="18"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- CAMERAS + LIVE FEED -->
+    <div class="grid-3 fade-in">
+
+      <!-- CAMERA PANEL -->
+      <div class="panel">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.8">
+            <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+          </svg>
+          <span class="panel-title">Live Camera Feeds</span>
+          <span class="panel-tag green">● 4 ACTIVE</span>
+        </div>
+        <div class="camera-grid">
+          <!-- CAM 1 -->
+          <div class="camera-feed active">
+            <div class="cam-mock">
+              <div class="cam-bg"></div>
+              <!-- simple silhouette -->
+              <svg class="cam-person" width="60" height="90" viewBox="0 0 60 90" fill="none">
+                <ellipse cx="30" cy="18" rx="12" ry="14" fill="#1a6bff" opacity="0.3"/>
+                <path d="M10 90Q12 60 30 56Q48 60 50 90Z" fill="#1a6bff" opacity="0.3"/>
+              </svg>
+              <!-- detection box -->
+              <div style="position:absolute;top:10%;left:30%;width:40%;height:60%">
+                <div class="detect-box" style="inset:0">
+                  <!-- corner accents -->
+                  <div style="position:absolute;top:-2px;left:-2px;width:10px;height:10px;border-top:2px solid #00e5ff;border-left:2px solid #00e5ff;border-radius:1px 0 0 0"></div>
+                  <div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-top:2px solid #00e5ff;border-right:2px solid #00e5ff;border-radius:0 1px 0 0"></div>
+                  <div style="position:absolute;bottom:-2px;left:-2px;width:10px;height:10px;border-bottom:2px solid #00e5ff;border-left:2px solid #00e5ff;border-radius:0 0 0 1px"></div>
+                  <div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-bottom:2px solid #00e5ff;border-right:2px solid #00e5ff;border-radius:0 0 1px 0"></div>
+                  <div class="detect-label">ID:STU-2847 · 97.2%</div>
+                </div>
+              </div>
+            </div>
+            <div class="cam-label">CAM-01 · GATE A</div>
+            <div class="cam-live"><span style="width:5px;height:5px;background:#ff4444;border-radius:50%;animation:pulse 1s infinite"></span> REC</div>
+            <div class="cam-overlay-text">
+              <span>1080p · 30fps</span>
+              <span style="color:#00ff9d">●DETECTING</span>
+            </div>
+          </div>
+
+          <!-- CAM 2 -->
+          <div class="camera-feed">
+            <div class="cam-mock">
+              <div class="cam-bg" style="background:linear-gradient(135deg,#060f1c,#0a1628)"></div>
+              <svg class="cam-person" width="40" height="70" style="right:20%;left:auto;transform:none" viewBox="0 0 40 70" fill="none">
+                <ellipse cx="20" cy="14" rx="9" ry="10" fill="#00e5ff" opacity="0.15"/>
+                <path d="M4 70Q5 46 20 43Q35 46 36 70Z" fill="#00e5ff" opacity="0.15"/>
+              </svg>
+            </div>
+            <div class="cam-label">CAM-02 · GATE B</div>
+            <div class="cam-live"><span style="width:5px;height:5px;background:#ff4444;border-radius:50%;animation:pulse 1.2s infinite"></span> REC</div>
+            <div class="cam-overlay-text"><span>720p · 25fps</span><span>STANDBY</span></div>
+          </div>
+
+          <!-- CAM 3 -->
+          <div class="camera-feed active">
+            <div class="cam-mock">
+              <div class="cam-bg" style="background:linear-gradient(135deg,#050d1a,#080f1e)"></div>
+              <svg class="cam-person" width="55" height="85" viewBox="0 0 55 85" fill="none">
+                <ellipse cx="27" cy="16" rx="11" ry="12" fill="#00ff9d" opacity="0.15"/>
+                <path d="M8 85Q10 58 27 54Q44 58 46 85Z" fill="#00ff9d" opacity="0.15"/>
+              </svg>
+              <div style="position:absolute;top:8%;left:28%;width:45%;height:55%">
+                <div class="detect-box" style="inset:0;border-color:var(--green)">
+                  <div style="position:absolute;top:-2px;left:-2px;width:10px;height:10px;border-top:2px solid #00ff9d;border-left:2px solid #00ff9d;border-radius:1px 0 0 0"></div>
+                  <div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-top:2px solid #00ff9d;border-right:2px solid #00ff9d;border-radius:0 1px 0 0"></div>
+                  <div style="position:absolute;bottom:-2px;left:-2px;width:10px;height:10px;border-bottom:2px solid #00ff9d;border-left:2px solid #00ff9d;border-radius:0 0 0 1px"></div>
+                  <div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-bottom:2px solid #00ff9d;border-right:2px solid #00ff9d;border-radius:0 0 1px 0"></div>
+                  <div class="detect-label" style="color:#00ff9d">ID:STU-1093 · 99.1%</div>
+                </div>
+              </div>
+            </div>
+            <div class="cam-label">CAM-03 · CORRIDOR</div>
+            <div class="cam-live"><span style="width:5px;height:5px;background:#ff4444;border-radius:50%;animation:pulse 0.9s infinite"></span> REC</div>
+            <div class="cam-overlay-text"><span>1080p · 30fps</span><span style="color:#00ff9d">●VERIFIED</span></div>
+          </div>
+
+          <!-- CAM 4 -->
+          <div class="camera-feed" style="border-color:rgba(255,68,68,0.3)">
+            <div class="cam-mock">
+              <div class="cam-bg" style="background:linear-gradient(135deg,#120a0a,#1a0808)"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="1.5" opacity="0.6">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span style="font-family:var(--font-mono);font-size:9px;color:#ff4444;opacity:0.8">SIGNAL LOST</span>
+              </div>
+            </div>
+            <div class="cam-label" style="color:#ff4444">CAM-04 · GATE C</div>
+            <div class="cam-overlay-text"><span>—</span><span style="color:#ff4444">OFFLINE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COL: Stats + RFID -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Donut -->
+        <div class="panel">
+          <div class="panel-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.8">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+              <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+            </svg>
+            <span class="panel-title">Today's Summary</span>
+          </div>
+          <div class="panel-body">
+            <div class="donut-wrap">
+              <svg class="donut-svg" width="90" height="90" viewBox="0 0 90 90">
+                <circle cx="45" cy="45" r="35" fill="none" stroke="#0d1e35" stroke-width="12"/>
+                <circle cx="45" cy="45" r="35" fill="none" stroke="#00ff9d" stroke-width="12"
+                  stroke-dasharray="138 82" stroke-dashoffset="0" transform="rotate(-90 45 45)"/>
+                <circle cx="45" cy="45" r="35" fill="none" stroke="#ffb300" stroke-width="12"
+                  stroke-dasharray="31 189" stroke-dashoffset="-138" transform="rotate(-90 45 45)"/>
+                <circle cx="45" cy="45" r="35" fill="none" stroke="#ff4444" stroke-width="12"
+                  stroke-dasharray="16 204" stroke-dashoffset="-169" transform="rotate(-90 45 45)"/>
+                <text x="45" y="41" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="16" font-weight="700" fill="#e8f4fd">284</text>
+                <text x="45" y="54" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a6278">PRESENT</text>
+              </svg>
+              <div class="donut-legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:#00ff9d"></div>
+                  <span class="legend-label">Present</span>
+                  <span class="legend-val">284</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:#ffb300"></div>
+                  <span class="legend-label">Late</span>
+                  <span class="legend-val">38</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:#ff4444"></div>
+                  <span class="legend-label">Absent</span>
+                  <span class="legend-val">20</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RFID Status -->
+        <div class="panel">
+          <div class="panel-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff9d" stroke-width="1.8">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/>
+            </svg>
+            <span class="panel-title">RFID Readers</span>
+            <span class="panel-tag green">3/4 ONLINE</span>
+          </div>
+          <div class="panel-body">
+            <div class="rfid-panel">
+              <div class="rfid-item">
+                <div class="rfid-signal">
+                  <div class="rfid-bar on" style="height:6px"></div>
+                  <div class="rfid-bar on" style="height:10px"></div>
+                  <div class="rfid-bar on" style="height:15px"></div>
+                  <div class="rfid-bar on" style="height:20px"></div>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:12px;font-weight:600">RFID-A · Gate A</div>
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-top:2px">Last scan: 09:33:57</div>
+                </div>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--green)">ONLINE</span>
+              </div>
+              <div class="rfid-item">
+                <div class="rfid-signal">
+                  <div class="rfid-bar on" style="height:6px"></div>
+                  <div class="rfid-bar on" style="height:10px"></div>
+                  <div class="rfid-bar on" style="height:15px"></div>
+                  <div class="rfid-bar" style="height:20px"></div>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:12px;font-weight:600">RFID-B · Gate B</div>
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-top:2px">Last scan: 09:31:14</div>
+                </div>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--green)">ONLINE</span>
+              </div>
+              <div class="rfid-item">
+                <div class="rfid-signal">
+                  <div class="rfid-bar" style="height:6px"></div>
+                  <div class="rfid-bar" style="height:10px"></div>
+                  <div class="rfid-bar" style="height:15px"></div>
+                  <div class="rfid-bar" style="height:20px"></div>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:12px;font-weight:600">RFID-C · Gate C</div>
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);margin-top:2px">Signal lost · 08:47:02</div>
+                </div>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--red)">OFFLINE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE FEED + TABLE -->
+    <div class="grid-2 fade-in">
+
+      <!-- Live Entry Feed -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="pulse-dot" style="width:7px;height:7px"></div>
+          <span class="panel-title">Live Entry Feed</span>
+          <span class="panel-tag">REAL-TIME</span>
+        </div>
+        <div class="panel-body">
+          <div class="live-feed">
+            <div class="feed-item">
+              <div class="feed-avatar verified">AN</div>
+              <div class="feed-info">
+                <div class="feed-name">Ananya Sharma</div>
+                <div class="feed-meta">STU-2847 · CSE-3A · Gate A</div>
+              </div>
+              <div class="feed-status verified">VERIFIED</div>
+              <div class="feed-time">09:33</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar verified" style="background:linear-gradient(135deg,#00cc7a,#00ff9d)">RK</div>
+              <div class="feed-info">
+                <div class="feed-name">Rahul Krishnan</div>
+                <div class="feed-meta">STU-1093 · ECE-2B · Gate A</div>
+              </div>
+              <div class="feed-status verified">VERIFIED</div>
+              <div class="feed-time">09:31</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar pending" style="background:linear-gradient(135deg,#cc8800,#ffb300)">PM</div>
+              <div class="feed-info">
+                <div class="feed-name">Priya Mehta</div>
+                <div class="feed-meta">STU-3201 · ME-1A · Gate B</div>
+              </div>
+              <div class="feed-status pending">PENDING</div>
+              <div class="feed-time">09:29</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar verified" style="background:linear-gradient(135deg,#0070cc,#00e5ff)">VS</div>
+              <div class="feed-info">
+                <div class="feed-name">Varun Singh</div>
+                <div class="feed-meta">STU-0449 · CSE-4A · Gate A</div>
+              </div>
+              <div class="feed-status verified">VERIFIED</div>
+              <div class="feed-time">09:28</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar denied" style="background:linear-gradient(135deg,#cc2200,#ff4444)">??</div>
+              <div class="feed-info">
+                <div class="feed-name">Unknown Person</div>
+                <div class="feed-meta">NO RFID MATCH · Gate B</div>
+              </div>
+              <div class="feed-status denied">DENIED</div>
+              <div class="feed-time">09:24</div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar verified" style="background:linear-gradient(135deg,#5500cc,#8b5cf6)">DG</div>
+              <div class="feed-info">
+                <div class="feed-name">Divya Gupta</div>
+                <div class="feed-meta">STU-2156 · IT-2B · Gate A</div>
+              </div>
+              <div class="feed-status verified">VERIFIED</div>
+              <div class="feed-time">09:22</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance Table -->
+      <div class="panel">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18M9 21V9"/>
+          </svg>
+          <span class="panel-title">Attendance Records</span>
+          <span class="panel-tag">TODAY</span>
+        </div>
+        <table class="attendance-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>RFID</th>
+              <th>Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="student-cell">
+                <div class="mini-avatar" style="background:linear-gradient(135deg,#1a6bff,#00e5ff);color:#fff">AS</div>
+                <div><div style="font-size:12px;font-weight:600">Ananya S.</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">CSE-3A</div></div>
+              </div></td>
+              <td><span class="rfid-tag">2847-FA</span></td>
+              <td style="font-family:var(--font-mono);font-size:11px">09:33:57</td>
+              <td><span class="feed-status verified">✓ PRESENT</span></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell">
+                <div class="mini-avatar" style="background:linear-gradient(135deg,#00cc7a,#00ff9d);color:#050d1a">RK</div>
+                <div><div style="font-size:12px;font-weight:600">Rahul K.</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">ECE-2B</div></div>
+              </div></td>
+              <td><span class="rfid-tag">1093-BE</span></td>
+              <td style="font-family:var(--font-mono);font-size:11px">09:31:14</td>
+              <td><span class="feed-status verified">✓ PRESENT</span></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell">
+                <div class="mini-avatar" style="background:linear-gradient(135deg,#cc8800,#ffb300);color:#050d1a">PM</div>
+                <div><div style="font-size:12px;font-weight:600">Priya M.</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">ME-1A</div></div>
+              </div></td>
+              <td><span class="rfid-tag">3201-CC</span></td>
+              <td style="font-family:var(--font-mono);font-size:11px">09:29:02</td>
+              <td><span class="feed-status pending">⧗ VERIFY</span></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell">
+                <div class="mini-avatar" style="background:linear-gradient(135deg,#0070cc,#00e5ff);color:#fff">VS</div>
+                <div><div style="font-size:12px;font-weight:600">Varun S.</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">CSE-4A</div></div>
+              </div></td>
+              <td><span class="rfid-tag">0449-AD</span></td>
+              <td style="font-family:var(--font-mono);font-size:11px">09:28:41</td>
+              <td><span class="feed-status verified">✓ PRESENT</span></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell">
+                <div class="mini-avatar" style="background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff">NK</div>
+                <div><div style="font-size:12px;font-weight:600">Nidhi K.</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">IT-3B</div></div>
+              </div></td>
+              <td><span class="rfid-tag">—</span></td>
+              <td style="font-family:var(--font-mono);font-size:11px">—</td>
+              <td><span class="feed-status denied">✗ ABSENT</span></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell">
+                <div class="mini-avatar" style="background:linear-gradient(135deg,#5500cc,#8b5cf6);color:#fff">DG</div>
+                <div><div style="font-size:12px;font-weight:600">Divya G.</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">IT-2B</div></div>
+              </div></td>
+              <td><span class="rfid-tag">2156-FE</span></td>
+              <td style="font-family:var(--font-mono);font-size:11px">09:22:18</td>
+              <td><span class="feed-status verified">✓ PRESENT</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WEEKLY TREND + CLASS ATTENDANCE -->
+    <div class="grid-2 fade-in">
+
+      <!-- Weekly bar chart -->
+      <div class="panel">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.8">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="panel-title">Weekly Attendance Trend</span>
+        </div>
+        <div class="panel-body">
+          <div style="display:flex;align-items:flex-end;gap:10px;height:110px;margin-bottom:8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="display:flex;flex-direction:column-reverse;gap:1px;width:100%;flex:1;align-items:center">
+                <div style="width:100%;height:72%;background:#00ff9d;border-radius:3px 3px 0 0;opacity:0.8"></div>
+                <div style="width:100%;height:10%;background:#ffb300;border-radius:0;opacity:0.7"></div>
+                <div style="width:100%;height:8%;background:#ff4444;border-radius:3px 3px 0 0;opacity:0.7"></div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">MON</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="display:flex;flex-direction:column-reverse;gap:1px;width:100%;flex:1;align-items:center">
+                <div style="width:100%;height:80%;background:#00ff9d;border-radius:3px 3px 0 0;opacity:0.8"></div>
+                <div style="width:100%;height:8%;background:#ffb300;border-radius:0;opacity:0.7"></div>
+                <div style="width:100%;height:6%;background:#ff4444;border-radius:3px 3px 0 0;opacity:0.7"></div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">TUE</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="display:flex;flex-direction:column-reverse;gap:1px;width:100%;flex:1;align-items:center">
+                <div style="width:100%;height:78%;background:#00ff9d;border-radius:3px 3px 0 0;opacity:0.8"></div>
+                <div style="width:100%;height:10%;background:#ffb300;border-radius:0;opacity:0.7"></div>
+                <div style="width:100%;height:6%;background:#ff4444;border-radius:3px 3px 0 0;opacity:0.7"></div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">WED</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="display:flex;flex-direction:column-reverse;gap:1px;width:100%;flex:1;align-items:center">
+                <div style="width:100%;height:76%;background:#00ff9d;border-radius:3px 3px 0 0;opacity:0.8"></div>
+                <div style="width:100%;height:12%;background:#ffb300;border-radius:0;opacity:0.7"></div>
+                <div style="width:100%;height:7%;background:#ff4444;border-radius:3px 3px 0 0;opacity:0.7"></div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">THU</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="display:flex;flex-direction:column-reverse;gap:1px;width:100%;flex:1;align-items:center">
+                <div style="width:100%;height:83%;background:#00e5ff;border-radius:3px 3px 0 0;border:1px solid rgba(0,229,255,0.4)"></div>
+                <div style="width:100%;height:9%;background:#ffb300;border-radius:0;opacity:0.7"></div>
+                <div style="width:100%;height:6%;background:#ff4444;border-radius:3px 3px 0 0;opacity:0.7"></div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--cyan)">TODAY</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:4px">
+            <div style="display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">
+              <div style="width:8px;height:8px;background:#00ff9d;border-radius:1px"></div>Present
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">
+              <div style="width:8px;height:8px;background:#ffb300;border-radius:1px"></div>Late
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">
+              <div style="width:8px;height:8px;background:#ff4444;border-radius:1px"></div>Absent
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class-wise Progress -->
+      <div class="panel">
+        <div class="panel-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff9d" stroke-width="1.8">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span class="panel-title">Class Attendance</span>
+        </div>
+        <div class="progress-row">
+          <div class="prog-item">
+            <div class="prog-header">
+              <span class="prog-label">CSE-3A</span>
+              <span class="prog-val">92%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" style="width:92%;background:var(--green)"></div>
+            </div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-header">
+              <span class="prog-label">ECE-2B</span>
+              <span class="prog-val">87%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" style="width:87%;background:var(--cyan)"></div>
+            </div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-header">
+              <span class="prog-label">ME-1A</span>
+              <span class="prog-val">79%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" style="width:79%;background:#3b82f6"></div>
+            </div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-header">
+              <span class="prog-label">CSE-4A</span>
+              <span class="prog-val">95%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" style="width:95%;background:var(--green)"></div>
+            </div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-header">
+              <span class="prog-label">IT-2B</span>
+              <span class="prog-val">71%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" style="width:71%;background:var(--amber)"></div>
+            </div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-header">
+              <span class="prog-label">IT-3B</span>
+              <span class="prog-val">63%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" style="width:63%;background:var(--red)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Live clock update
+  function updateClock() {
+    const now = new Date();
+    const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const timeStr = now.toTimeString().slice(0,8);
+    const sub = document.querySelector('.topbar-subtitle');
+    if(sub) sub.textContent = `${days[now.getDay()]} · ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} · ${timeStr}`;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Nav interactivity
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

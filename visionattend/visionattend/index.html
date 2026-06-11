@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionAttend 4.0 — Smart Attendance System</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body { overflow: hidden; }
+  .landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  /* Animated rings */
+  .rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0,229,255,0.08);
+    transform: translate(-50%, -50%);
+    animation: ringExpand 6s ease-in-out infinite;
+  }
+  .ring:nth-child(1) { width:300px; height:300px; animation-delay:0s; }
+  .ring:nth-child(2) { width:500px; height:500px; animation-delay:0.8s; border-color:rgba(0,255,157,0.06); }
+  .ring:nth-child(3) { width:700px; height:700px; animation-delay:1.6s; }
+  .ring:nth-child(4) { width:900px; height:900px; animation-delay:2.4s; border-color:rgba(0,255,157,0.04); }
+  @keyframes ringExpand {
+    0%,100% { opacity:0.4; }
+    50% { opacity:1; }
+  }
+
+  /* Center orb / logo */
+  .hero-icon {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .icon-ring {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,229,255,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0,229,255,0.1);
+    background: radial-gradient(circle, rgba(0,229,255,0.05) 0%, transparent 70%);
+  }
+
+  .icon-ring::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,229,255,0.1);
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 7vw, 72px);
+    font-weight: 800;
+    letter-spacing: 6px;
+    line-height: 1;
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 0.8s 0.15s ease both;
+  }
+
+  .hero-title .accent { color: var(--cyan); }
+
+  .hero-version {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--cyan);
+    letter-spacing: 6px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 0.8s 0.25s ease both;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 540px;
+    line-height: 1.7;
+    margin: 0 auto 36px;
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 0.8s 0.35s ease both;
+  }
+
+  .hero-desc span { color: var(--cyan); font-weight: 600; }
+
+  .cta-group {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 0.8s 0.45s ease both;
+  }
+
+  .cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: rgba(0,229,255,0.12);
+    border: 1px solid rgba(0,229,255,0.4);
+    border-radius: 8px;
+    color: var(--cyan);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .cta-primary:hover {
+    background: rgba(0,229,255,0.2);
+    box-shadow: 0 0 30px rgba(0,229,255,0.2);
+    transform: translateY(-2px);
+  }
+
+  .cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .cta-secondary:hover { border-color: var(--border-bright); color: var(--text-primary); }
+
+  /* Feature pills */
+  .feature-pills {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 48px;
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 0.8s 0.55s ease both;
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .pill:hover { border-color: var(--border-bright); color: var(--text-primary); }
+  .pill-dot { width:6px; height:6px; border-radius:50%; }
+
+  /* System stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-top: 52px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 0.8s 0.65s ease both;
+  }
+  .stat-mini { text-align: center; }
+  .stat-mini-val {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  .stat-mini-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-top: 3px;
+  }
+</style>
+</head>
+<body>
+  <div class="landing">
+    <div class="rings">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+    </div>
+
+    <div class="hero-icon">
+      <div class="icon-ring">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="26" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/>
+          <circle cx="32" cy="32" r="18" stroke="#00e5ff" stroke-width="1" opacity="0.8"/>
+          <ellipse cx="32" cy="27" rx="9" ry="11" stroke="#60a5fa" stroke-width="1.8"/>
+          <path d="M16 52Q18 40 32 37Q46 40 48 52" stroke="#60a5fa" stroke-width="1.8"/>
+          <circle cx="28" cy="24" r="2" fill="#00e5ff"/>
+          <circle cx="36" cy="24" r="2" fill="#00e5ff"/>
+          <circle cx="32" cy="29" r="1.5" fill="#00e5ff"/>
+          <path d="M47 34Q52 29 47 24" stroke="#00ff9d" stroke-width="2" stroke-linecap="round"/>
+          <path d="M52 38Q60 29 52 20" stroke="#00ff9d" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="46" cy="29" r="2.5" fill="#00ff9d"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="hero-title">VISION<span class="accent">ATTEND</span></div>
+    <div class="hero-version">VERSION 4.0 · AI + RFID</div>
+
+    <p class="hero-desc">
+      Next-generation smart attendance system powered by
+      <span>Face Recognition AI</span> and <span>RFID technology</span>.
+      Eliminating proxy attendance. Securing campuses in real time.
+    </p>
+
+    <div class="cta-group">
+      <a href="dashboard.html" class="cta-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        OPEN DASHBOARD
+      </a>
+      <a href="pages/students.html" class="cta-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        VIEW STUDENTS
+      </a>
+    </div>
+
+    <div class="feature-pills">
+      <div class="pill"><div class="pill-dot" style="background:#00e5ff"></div>Face Recognition</div>
+      <div class="pill"><div class="pill-dot" style="background:#00ff9d"></div>RFID Verification</div>
+      <div class="pill"><div class="pill-dot" style="background:#ffb300"></div>Multi-Person Detection</div>
+      <div class="pill"><div class="pill-dot" style="background:#ff4444"></div>Proxy Blocking</div>
+      <div class="pill"><div class="pill-dot" style="background:#8b5cf6"></div>Real-Time Dashboard</div>
+      <div class="pill"><div class="pill-dot" style="background:#1a6bff"></div>Analytics & Reports</div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-mini">
+        <div class="stat-mini-val">342</div>
+        <div class="stat-mini-label">STUDENTS</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--green)">4</div>
+        <div class="stat-mini-label">GATE CAMERAS</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val">98.7%</div>
+        <div class="stat-mini-label">ACCURACY</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--amber)">&lt;1s</div>
+        <div class="stat-mini-label">DETECT TIME</div>
+      </div>
+    </div>
+  </div>
+  <script src="js/main.js"></script>
+</body>
+</html>

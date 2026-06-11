@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionAttend 4.0 — Students</title>
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  /* Reuse app-shell styles inline for standalone page */
+  body::before {
+    content:'';position:fixed;inset:0;
+    background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);
+    background-size:40px 40px;pointer-events:none;z-index:0;
+  }
+
+  .filters {
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  }
+  .filter-btn {
+    padding:7px 14px; border-radius:6px; cursor:pointer;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:1px;
+    border:1px solid var(--border); background:var(--bg-elevated);
+    color:var(--text-secondary); transition:all .2s;
+  }
+  .filter-btn:hover,.filter-btn.active {
+    border-color:var(--border-bright); color:var(--cyan);
+    background:rgba(0,229,255,0.08);
+  }
+
+  .student-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px;
+  }
+
+  .student-card {
+    background:var(--bg-card); border:1px solid var(--border);
+    border-radius:12px; padding:20px; position:relative; overflow:hidden;
+    transition:border-color .2s, transform .2s; cursor:pointer;
+  }
+  .student-card:hover { border-color:var(--border-bright); transform:translateY(-3px); }
+  .student-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:var(--card-accent, var(--cyan));
+  }
+
+  .student-card-avatar {
+    width:56px; height:56px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-size:22px; font-weight:700;
+    margin-bottom:14px;
+  }
+
+  .student-card-name {
+    font-family:var(--font-display); font-size:17px; font-weight:600;
+    letter-spacing:.5px; margin-bottom:4px;
+  }
+  .student-card-id {
+    font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-bottom:12px;
+  }
+  .student-card-meta {
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;
+  }
+  .student-card-footer {
+    display:flex; justify-content:space-between; align-items:center;
+    padding-top:12px; border-top:1px solid var(--border);
+  }
+  .attendance-pct {
+    font-family:var(--font-display); font-size:22px; font-weight:700;
+  }
+  .attendance-label { font-family:var(--font-mono); font-size:9px; color:var(--text-muted); letter-spacing:1px; }
+
+  /* mini bar */
+  .mini-bar {
+    height:3px; background:var(--bg-elevated); border-radius:2px; overflow:hidden;
+    margin-top:4px; width:60px;
+  }
+  .mini-bar-fill { height:100%; border-radius:2px; }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(5,13,26,0.85);
+    z-index:100; align-items:center; justify-content:center; backdrop-filter:blur(4px);
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--bg-card); border:1px solid var(--border-bright);
+    border-radius:16px; padding:28px; width:440px; max-width:95vw;
+    position:relative; animation:fadeUp .3s ease;
+  }
+  .modal-close {
+    position:absolute; top:16px; right:16px; cursor:pointer;
+    color:var(--text-muted); font-size:18px; transition:color .2s;
+  }
+  .modal-close:hover { color:var(--text-primary); }
+  .modal-title { font-family:var(--font-display); font-size:20px; font-weight:700; margin-bottom:20px; }
+  .form-row { margin-bottom:14px; }
+  .form-label { font-family:var(--font-mono); font-size:10px; letter-spacing:1px; color:var(--text-muted); margin-bottom:6px; display:block; }
+  .form-input {
+    width:100%; padding:9px 12px;
+    background:var(--bg-elevated); border:1px solid var(--border);
+    border-radius:6px; color:var(--text-primary); font-family:var(--font-mono); font-size:12px;
+    outline:none; transition:border-color .2s;
+  }
+  .form-input:focus { border-color:var(--border-bright); }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/><circle cx="22" cy="22" r="13" stroke="#00e5ff" stroke-width="1" opacity="0.8"/><ellipse cx="22" cy="19" rx="7" ry="8" stroke="#60a5fa" stroke-width="1.5"/><path d="M11 35Q12 28 22 26Q32 28 33 35" stroke="#60a5fa" stroke-width="1.5"/><circle cx="19" cy="17" r="1.5" fill="#00e5ff"/><circle cx="25" cy="17" r="1.5" fill="#00e5ff"/><circle cx="22" cy="21" r="1.2" fill="#00e5ff"/><path d="M33 24Q36 21 33 18" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><path d="M36 26Q41 21 36 16" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><circle cx="32" cy="21" r="2" fill="#00ff9d"/></svg>
+      </div>
+      <div class="logo-text"><div class="logo-name">VISION<span>ATTEND</span></div><div class="logo-ver">v4.0 · AI + RFID</div></div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <nav>
+      <a href="../dashboard.html" class="nav-item" data-page="dashboard.html">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="students.html" class="nav-item active" data-page="students.html">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Students <span class="nav-badge cyan">342</span>
+      </a>
+      <a href="cameras.html" class="nav-item" data-page="cameras.html">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Live Cameras <span class="nav-badge cyan">4</span>
+      </a>
+      <a href="reports.html" class="nav-item" data-page="reports.html">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+        Reports
+      </a>
+      <a href="alerts.html" class="nav-item" data-page="alerts.html">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Alerts <span class="nav-badge red">3</span>
+      </a>
+      <div class="sidebar-section">System</div>
+      <a href="settings.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="live-indicator"><div class="pulse-dot green"></div>System Online · 98.7%</div>
+    </div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div><div class="topbar-title">Students</div><div class="topbar-sub" id="live-clock"></div></div>
+    <div class="topbar-spacer"></div>
+    <div class="search-bar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3a6278" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search by name or ID..." id="searchInput" oninput="filterStudents()">
+    </div>
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('open')" style="white-space:nowrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Student
+    </button>
+    <div class="avatar">AD</div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <!-- Filters row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div class="filters">
+        <button class="filter-btn active" onclick="setFilter(this,'all')">ALL (342)</button>
+        <button class="filter-btn" onclick="setFilter(this,'cse')">CSE</button>
+        <button class="filter-btn" onclick="setFilter(this,'ece')">ECE</button>
+        <button class="filter-btn" onclick="setFilter(this,'me')">ME</button>
+        <button class="filter-btn" onclick="setFilter(this,'it')">IT</button>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">
+        Showing <span id="countDisplay" style="color:var(--cyan)">12</span> students
+      </div>
+    </div>
+
+    <!-- Student Cards Grid -->
+    <div class="student-grid" id="studentGrid">
+
+      <div class="student-card fade-up" data-dept="cse" style="--card-accent:#00e5ff">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#1a6bff,#00e5ff);color:#fff">AS</div>
+        <div class="student-card-name">Ananya Sharma</div>
+        <div class="student-card-id">STU-2847 · RFID: 2847-FA</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">CSE-3A</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">92%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:92%;background:var(--green)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="ece" style="--card-accent:#00ff9d">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#00cc7a,#00ff9d);color:#050d1a">RK</div>
+        <div class="student-card-name">Rahul Krishnan</div>
+        <div class="student-card-id">STU-1093 · RFID: 1093-BE</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">ECE-2B</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">87%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:87%;background:var(--cyan)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="me" style="--card-accent:#ffb300">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#cc8800,#ffb300);color:#050d1a">PM</div>
+        <div class="student-card-name">Priya Mehta</div>
+        <div class="student-card-id">STU-3201 · RFID: 3201-CC</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">ME-1A</span>
+          <span class="tag tag-amber">VERIFY</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--amber)">74%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:74%;background:var(--amber)"></div></div></div>
+          <span class="tag tag-amber">PENDING</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="cse" style="--card-accent:#00e5ff">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#0070cc,#00e5ff);color:#fff">VS</div>
+        <div class="student-card-name">Varun Singh</div>
+        <div class="student-card-id">STU-0449 · RFID: 0449-AD</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">CSE-4A</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">95%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:95%;background:var(--green)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="it" style="--card-accent:#ff4444">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff">NK</div>
+        <div class="student-card-name">Nidhi Kapoor</div>
+        <div class="student-card-id">STU-1788 · RFID: 1788-KA</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">IT-3B</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--red)">63%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:63%;background:var(--red)"></div></div></div>
+          <span class="tag tag-red">ABSENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="it" style="--card-accent:#8b5cf6">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#5500cc,#8b5cf6);color:#fff">DG</div>
+        <div class="student-card-name">Divya Gupta</div>
+        <div class="student-card-id">STU-2156 · RFID: 2156-FE</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">IT-2B</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">88%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:88%;background:var(--cyan)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="ece" style="--card-accent:#1a6bff">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#0050cc,#1a6bff);color:#fff">AK</div>
+        <div class="student-card-name">Arjun Kumar</div>
+        <div class="student-card-id">STU-0912 · RFID: 0912-DK</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">ECE-3A</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">91%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:91%;background:var(--green)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="cse" style="--card-accent:#00ff9d">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#006644,#00ff9d);color:#050d1a">SK</div>
+        <div class="student-card-name">Sneha Kulkarni</div>
+        <div class="student-card-id">STU-3344 · RFID: 3344-SK</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">CSE-2B</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">96%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:96%;background:var(--green)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="me" style="--card-accent:#ffb300">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#886600,#ffb300);color:#050d1a">MT</div>
+        <div class="student-card-name">Mohit Taneja</div>
+        <div class="student-card-id">STU-2780 · RFID: 2780-MT</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">ME-2A</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--amber)">71%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:71%;background:var(--amber)"></div></div></div>
+          <span class="tag tag-amber">LATE</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="it" style="--card-accent:#00e5ff">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#004499,#00e5ff);color:#fff">RP</div>
+        <div class="student-card-name">Riya Pandey</div>
+        <div class="student-card-id">STU-1501 · RFID: 1501-RP</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">IT-1A</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">83%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:83%;background:var(--cyan)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="ece" style="--card-accent:#ff4444">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#990000,#ff4444);color:#fff">SB</div>
+        <div class="student-card-name">Sahil Banerjee</div>
+        <div class="student-card-id">STU-0671 · RFID: 0671-SB</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">ECE-1B</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--red)">58%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:58%;background:var(--red)"></div></div></div>
+          <span class="tag tag-red">ABSENT</span>
+        </div>
+      </div>
+
+      <div class="student-card fade-up" data-dept="cse" style="--card-accent:#8b5cf6">
+        <div class="student-card-avatar" style="background:linear-gradient(135deg,#440088,#8b5cf6);color:#fff">KN</div>
+        <div class="student-card-name">Kavya Nair</div>
+        <div class="student-card-id">STU-4102 · RFID: 4102-KN</div>
+        <div class="student-card-meta">
+          <span class="tag tag-cyan">CSE-1A</span>
+          <span class="tag tag-green">ENROLLED</span>
+        </div>
+        <div class="student-card-footer">
+          <div><div class="attendance-pct" style="color:var(--green)">89%</div><div class="attendance-label">ATTENDANCE</div><div class="mini-bar"><div class="mini-bar-fill" style="width:89%;background:var(--cyan)"></div></div></div>
+          <span class="tag tag-green">PRESENT</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ADD STUDENT MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">✕</div>
+    <div class="modal-title">Register New Student</div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">FIRST NAME</label><input class="form-input" type="text" placeholder="e.g. Ananya"></div>
+      <div class="form-row"><label class="form-label">LAST NAME</label><input class="form-input" type="text" placeholder="e.g. Sharma"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">STUDENT ID</label><input class="form-input" type="text" placeholder="STU-XXXX"></div>
+      <div class="form-row"><label class="form-label">RFID TAG</label><input class="form-input" type="text" placeholder="XXXX-XX"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">DEPARTMENT</label>
+        <select class="form-input"><option>CSE</option><option>ECE</option><option>ME</option><option>IT</option></select>
+      </div>
+      <div class="form-row"><label class="form-label">SECTION</label><input class="form-input" type="text" placeholder="e.g. 3A"></div>
+    </div>
+    <div class="form-row"><label class="form-label">EMAIL</label><input class="form-input" type="email" placeholder="student@institute.edu"></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="document.getElementById('addModal').classList.remove('open');showToast('Student registered successfully!','success')">REGISTER STUDENT</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('addModal').classList.remove('open')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/main.js"></script>
+<script>
+  function setFilter(btn, dept) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cards = document.querySelectorAll('.student-card');
+    let count = 0;
+    cards.forEach(c => {
+      const show = dept === 'all' || c.dataset.dept === dept;
+      c.style.display = show ? '' : 'none';
+      if (show) count++;
+    });
+    document.getElementById('countDisplay').textContent = count;
+  }
+
+  function filterStudents() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.student-card');
+    let count = 0;
+    cards.forEach(c => {
+      const text = c.textContent.toLowerCase();
+      const show = text.includes(q);
+      c.style.display = show ? '' : 'none';
+      if (show) count++;
+    });
+    document.getElementById('countDisplay').textContent = count;
+  }
+</script>
+</body>
+</html>

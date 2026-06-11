@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionAttend 4.0 — Alerts</title>
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .alert-list{display:flex;flex-direction:column;gap:12px;}
+  .alert-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;gap:16px;align-items:flex-start;transition:border-color .2s;position:relative;overflow:hidden;}
+  .alert-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+  .alert-card.critical::before{background:var(--red);}
+  .alert-card.warning::before{background:var(--amber);}
+  .alert-card.info::before{background:var(--cyan);}
+  .alert-card:hover{border-color:var(--border-bright);}
+  .alert-card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .alert-card-icon.critical{background:rgba(255,68,68,0.12);border:1px solid rgba(255,68,68,0.25);}
+  .alert-card-icon.warning{background:rgba(255,179,0,0.12);border:1px solid rgba(255,179,0,0.25);}
+  .alert-card-icon.info{background:rgba(0,229,255,0.10);border:1px solid rgba(0,229,255,0.2);}
+  .alert-card-title{font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:.5px;margin-bottom:5px;}
+  .alert-card-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;}
+  .alert-card-meta{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);}
+  .alert-card-actions{margin-left:auto;display:flex;gap:8px;flex-shrink:0;}
+  .action-btn{padding:6px 12px;border-radius:6px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border:1px solid;transition:all .2s;}
+  .action-btn.resolve{background:rgba(0,255,157,0.08);color:var(--green);border-color:rgba(0,255,157,0.2);}
+  .action-btn.resolve:hover{background:rgba(0,255,157,0.16);}
+  .action-btn.dismiss{background:var(--bg-elevated);color:var(--text-muted);border-color:var(--border);}
+  .action-btn.dismiss:hover{color:var(--text-primary);border-color:var(--border-bright);}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/><circle cx="22" cy="22" r="13" stroke="#00e5ff" stroke-width="1" opacity="0.8"/><ellipse cx="22" cy="19" rx="7" ry="8" stroke="#60a5fa" stroke-width="1.5"/><path d="M11 35Q12 28 22 26Q32 28 33 35" stroke="#60a5fa" stroke-width="1.5"/><circle cx="19" cy="17" r="1.5" fill="#00e5ff"/><circle cx="25" cy="17" r="1.5" fill="#00e5ff"/><circle cx="22" cy="21" r="1.2" fill="#00e5ff"/><path d="M33 24Q36 21 33 18" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><path d="M36 26Q41 21 36 16" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><circle cx="32" cy="21" r="2" fill="#00ff9d"/></svg></div>
+      <div class="logo-text"><div class="logo-name">VISION<span>ATTEND</span></div><div class="logo-ver">v4.0 · AI + RFID</div></div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <nav>
+      <a href="../dashboard.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="students.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Students <span class="nav-badge cyan">342</span></a>
+      <a href="cameras.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Live Cameras</a>
+      <a href="reports.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Reports</a>
+      <a href="alerts.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Alerts <span class="nav-badge red">3</span></a>
+      <div class="sidebar-section">System</div>
+      <a href="settings.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-bottom"><div class="live-indicator"><div class="pulse-dot green"></div>System Online · 98.7%</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div><div class="topbar-title">Alerts</div><div class="topbar-sub" id="live-clock"></div></div>
+    <div class="topbar-spacer"></div>
+    <button class="btn btn-ghost" onclick="showToast('All alerts cleared','success');document.querySelectorAll('.alert-card').forEach(c=>c.remove())">Clear All</button>
+    <div class="avatar">AD</div>
+  </header>
+
+  <main class="main-content">
+    <div style="display:flex;gap:14px;margin-bottom:4px">
+      <div class="panel" style="flex:1;padding:16px 20px;display:flex;gap:12px;align-items:center">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red)"></div>
+        <div><div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--red)">1</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px">CRITICAL</div></div>
+      </div>
+      <div class="panel" style="flex:1;padding:16px 20px;display:flex;gap:12px;align-items:center">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 6px var(--amber)"></div>
+        <div><div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--amber)">1</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px">WARNING</div></div>
+      </div>
+      <div class="panel" style="flex:1;padding:16px 20px;display:flex;gap:12px;align-items:center">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan)"></div>
+        <div><div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--cyan)">1</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px">INFO</div></div>
+      </div>
+    </div>
+
+    <div class="alert-list">
+      <div class="alert-card critical fade-up">
+        <div class="alert-card-icon critical">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="alert-card-title">Proxy Attendance Attempt Blocked</div>
+          <div class="alert-card-desc">Face ID mismatch detected at Gate B. RFID card 2034-XP scanned but face recognition returned 12% confidence — below the 85% threshold. Entry denied and flagged for review.</div>
+          <div class="alert-card-meta">09:24:33 · Gate B · CAM-02 · Auto-blocked by AI engine</div>
+        </div>
+        <div class="alert-card-actions">
+          <button class="action-btn resolve" onclick="this.closest('.alert-card').style.opacity='0.4'">RESOLVE</button>
+          <button class="action-btn dismiss" onclick="this.closest('.alert-card').remove()">DISMISS</button>
+        </div>
+      </div>
+
+      <div class="alert-card warning fade-up">
+        <div class="alert-card-icon warning">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffb300" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="alert-card-title">Camera Feed Degraded — Gate C</div>
+          <div class="alert-card-desc">CAM-04 at Gate C has lost connection. Signal dropped at 08:47 AM. RFID reader at Gate C is still operational but face verification is unavailable. Manual check recommended.</div>
+          <div class="alert-card-meta">08:47:02 · Gate C · RFID-C active · Backup mode enabled</div>
+        </div>
+        <div class="alert-card-actions">
+          <button class="action-btn resolve" onclick="this.closest('.alert-card').style.opacity='0.4'">RESOLVE</button>
+          <button class="action-btn dismiss" onclick="this.closest('.alert-card').remove()">DISMISS</button>
+        </div>
+      </div>
+
+      <div class="alert-card info fade-up">
+        <div class="alert-card-icon info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="alert-card-title">Low Attendance Warning: IT-3B</div>
+          <div class="alert-card-desc">Class IT-3B has dropped to 63% weekly attendance — 12% below the institutional minimum threshold of 75%. Automated notification sent to class coordinator.</div>
+          <div class="alert-card-meta">09:00:00 · Automated system alert · IT-3B · 34 students</div>
+        </div>
+        <div class="alert-card-actions">
+          <button class="action-btn resolve" onclick="this.closest('.alert-card').style.opacity='0.4'">RESOLVE</button>
+          <button class="action-btn dismiss" onclick="this.closest('.alert-card').remove()">DISMISS</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../js/main.js"></script>
+</body>
+</html>

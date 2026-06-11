@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionAttend 4.0 — Live Cameras</title>
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .cam-grid-full{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .cam-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
+  .cam-card:hover{border-color:var(--border-bright);}
+  .cam-card.online{border-color:rgba(0,255,157,0.25);}
+  .cam-card.offline{border-color:rgba(255,68,68,0.25);}
+  .cam-screen{aspect-ratio:16/10;background:#060f1c;position:relative;overflow:hidden;cursor:pointer;}
+  .cam-screen::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,229,255,0.012) 0px,rgba(0,229,255,0.012) 1px,transparent 1px,transparent 4px);animation:scanlines 3s linear infinite;pointer-events:none;z-index:2;}
+  @keyframes scanlines{from{background-position:0 0}to{background-position:0 100px}}
+  .cam-body-bg{position:absolute;inset:0;background:linear-gradient(160deg,#060f1c 0%,#091826 100%);}
+  .cam-person-svg{position:absolute;bottom:0;left:50%;transform:translateX(-50%);}
+  .cam-info{padding:14px 16px;}
+  .cam-name{font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:.5px;margin-bottom:4px;}
+  .cam-stats{display:flex;gap:10px;flex-wrap:wrap;}
+  .cam-stat{font-family:var(--font-mono);font-size:10px;padding:3px 8px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:4px;color:var(--text-secondary);}
+  .detect-box-abs{position:absolute;border:1.5px solid;border-radius:4px;}
+  .detect-box-abs.cyan{border-color:var(--cyan);animation:detectPulse 2s ease-in-out infinite;}
+  .detect-box-abs.green{border-color:var(--green);animation:detectPulse 2.3s ease-in-out infinite;}
+  @keyframes detectPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,229,255,0.4)}50%{box-shadow:0 0 0 4px rgba(0,229,255,0)}}
+  .corner{position:absolute;width:10px;height:10px;}
+  .corner.tl{top:-2px;left:-2px;border-top:2px solid;border-left:2px solid;border-radius:1px 0 0 0;}
+  .corner.tr{top:-2px;right:-2px;border-top:2px solid;border-right:2px solid;border-radius:0 1px 0 0;}
+  .corner.bl{bottom:-2px;left:-2px;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 1px;}
+  .corner.br{bottom:-2px;right:-2px;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 1px 0;}
+  .detect-lbl{position:absolute;bottom:-18px;left:0;font-family:var(--font-mono);font-size:8px;white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/><circle cx="22" cy="22" r="13" stroke="#00e5ff" stroke-width="1" opacity="0.8"/><ellipse cx="22" cy="19" rx="7" ry="8" stroke="#60a5fa" stroke-width="1.5"/><path d="M11 35Q12 28 22 26Q32 28 33 35" stroke="#60a5fa" stroke-width="1.5"/><circle cx="19" cy="17" r="1.5" fill="#00e5ff"/><circle cx="25" cy="17" r="1.5" fill="#00e5ff"/><circle cx="22" cy="21" r="1.2" fill="#00e5ff"/><path d="M33 24Q36 21 33 18" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><path d="M36 26Q41 21 36 16" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round"/><circle cx="32" cy="21" r="2" fill="#00ff9d"/></svg></div>
+      <div class="logo-text"><div class="logo-name">VISION<span>ATTEND</span></div><div class="logo-ver">v4.0 · AI + RFID</div></div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <nav>
+      <a href="../dashboard.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="students.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Students <span class="nav-badge cyan">342</span></a>
+      <a href="cameras.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Live Cameras <span class="nav-badge cyan">4</span></a>
+      <a href="reports.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Reports</a>
+      <a href="alerts.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Alerts <span class="nav-badge red">3</span></a>
+      <div class="sidebar-section">System</div>
+      <a href="settings.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-bottom"><div class="live-indicator"><div class="pulse-dot green"></div>System Online · 98.7%</div></div>
+  </aside>
+
+  <header class="topbar">
+    <div><div class="topbar-title">Live Cameras</div><div class="topbar-sub" id="live-clock"></div></div>
+    <div class="topbar-spacer"></div>
+    <span class="tag tag-green" style="padding:6px 12px">● 3 FEEDS ACTIVE</span>
+    <span class="tag tag-red" style="padding:6px 12px">● 1 OFFLINE</span>
+    <div class="avatar">AD</div>
+  </header>
+
+  <main class="main-content">
+    <div class="cam-grid-full">
+
+      <!-- CAM 1 - Gate A Active -->
+      <div class="cam-card online fade-up">
+        <div class="cam-screen">
+          <div class="cam-body-bg"></div>
+          <svg class="cam-person-svg" width="80" height="120" viewBox="0 0 80 120" fill="none">
+            <ellipse cx="40" cy="24" rx="16" ry="20" fill="#1a6bff" opacity="0.25"/>
+            <path d="M10 120Q12 80 40 74Q68 80 70 120Z" fill="#1a6bff" opacity="0.2"/>
+          </svg>
+          <div class="detect-box-abs cyan" style="top:8%;left:32%;width:38%;height:60%">
+            <div class="corner tl" style="border-color:#00e5ff"></div><div class="corner tr" style="border-color:#00e5ff"></div>
+            <div class="corner bl" style="border-color:#00e5ff"></div><div class="corner br" style="border-color:#00e5ff"></div>
+            <div class="detect-lbl" style="color:#00e5ff">STU-2847 · Ananya S · 97.2%</div>
+          </div>
+          <div style="position:absolute;top:8px;left:8px;font-family:var(--font-mono);font-size:9px;color:var(--green);background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;z-index:3">CAM-01 · GATE A</div>
+          <div style="position:absolute;top:8px;right:8px;font-family:var(--font-mono);font-size:9px;color:var(--red);background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;z-index:3;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;background:#ff4444;border-radius:50%;animation:pulse 1s infinite;display:inline-block"></span>REC</div>
+          <div style="position:absolute;bottom:8px;left:8px;right:8px;display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);z-index:3"><span>1080p · 30fps</span><span style="color:var(--cyan)">● DETECTING</span></div>
+        </div>
+        <div class="cam-info">
+          <div class="cam-name">Gate A — Main Entrance</div>
+          <div class="cam-stats">
+            <span class="cam-stat" style="color:var(--green)">● ONLINE</span>
+            <span class="cam-stat">1 FACE DETECTED</span>
+            <span class="cam-stat">Conf: 97.2%</span>
+            <span class="cam-stat">Latency: 87ms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAM 2 - Gate B Active -->
+      <div class="cam-card online fade-up">
+        <div class="cam-screen">
+          <div class="cam-body-bg" style="background:linear-gradient(160deg,#060f1c,#0a1628)"></div>
+          <svg class="cam-person-svg" style="left:35%;transform:none" width="55" height="95" viewBox="0 0 55 95" fill="none">
+            <ellipse cx="27" cy="18" rx="12" ry="15" fill="#00e5ff" opacity="0.12"/>
+            <path d="M6 95Q8 65 27 60Q46 65 48 95Z" fill="#00e5ff" opacity="0.1"/>
+          </svg>
+          <div style="position:absolute;top:8px;left:8px;font-family:var(--font-mono);font-size:9px;color:var(--green);background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;z-index:3">CAM-02 · GATE B</div>
+          <div style="position:absolute;top:8px;right:8px;font-family:var(--font-mono);font-size:9px;color:var(--red);background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;z-index:3;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;background:#ff4444;border-radius:50%;animation:pulse 1.2s infinite;display:inline-block"></span>REC</div>
+          <div style="position:absolute;bottom:8px;left:8px;right:8px;display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);z-index:3"><span>720p · 25fps</span><span>STANDBY</span></div>
+        </div>
+        <div class="cam-info">
+          <div class="cam-name">Gate B — Side Entrance</div>
+          <div class="cam-stats">
+            <span class="cam-stat" style="color:var(--green)">● ONLINE</span>
+            <span class="cam-stat">0 FACES</span>
+            <span class="cam-stat">720p Mode</span>
+            <span class="cam-stat">Latency: 112ms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAM 3 - Corridor Active -->
+      <div class="cam-card online fade-up">
+        <div class="cam-screen">
+          <div class="cam-body-bg" style="background:linear-gradient(160deg,#050d1a,#080f1e)"></div>
+          <svg class="cam-person-svg" width="75" height="115" viewBox="0 0 75 115" fill="none">
+            <ellipse cx="37" cy="22" rx="14" ry="18" fill="#00ff9d" opacity="0.15"/>
+            <path d="M8 115Q10 77 37 71Q64 77 66 115Z" fill="#00ff9d" opacity="0.12"/>
+          </svg>
+          <div class="detect-box-abs green" style="top:6%;left:28%;width:45%;height:60%">
+            <div class="corner tl" style="border-color:#00ff9d"></div><div class="corner tr" style="border-color:#00ff9d"></div>
+            <div class="corner bl" style="border-color:#00ff9d"></div><div class="corner br" style="border-color:#00ff9d"></div>
+            <div class="detect-lbl" style="color:#00ff9d">STU-1093 · Rahul K · 99.1%</div>
+          </div>
+          <div style="position:absolute;top:8px;left:8px;font-family:var(--font-mono);font-size:9px;color:var(--green);background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;z-index:3">CAM-03 · CORRIDOR</div>
+          <div style="position:absolute;top:8px;right:8px;font-family:var(--font-mono);font-size:9px;color:var(--red);background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;z-index:3;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;background:#ff4444;border-radius:50%;animation:pulse 0.9s infinite;display:inline-block"></span>REC</div>
+          <div style="position:absolute;bottom:8px;left:8px;right:8px;display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);z-index:3"><span>1080p · 30fps</span><span style="color:var(--green)">● VERIFIED</span></div>
+        </div>
+        <div class="cam-info">
+          <div class="cam-name">Corridor — Building 2</div>
+          <div class="cam-stats">
+            <span class="cam-stat" style="color:var(--green)">● ONLINE</span>
+            <span class="cam-stat" style="color:var(--green)">1 VERIFIED</span>
+            <span class="cam-stat">Conf: 99.1%</span>
+            <span class="cam-stat">Latency: 73ms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAM 4 - OFFLINE -->
+      <div class="cam-card offline fade-up">
+        <div class="cam-screen" style="cursor:default">
+          <div class="cam-body-bg" style="background:linear-gradient(160deg,#120a0a,#1a0808)"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:3">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="1.5" opacity="0.7"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div style="font-family:var(--font-mono);font-size:12px;color:#ff4444;letter-spacing:2px">SIGNAL LOST</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">Last online: 08:47:02</div>
+          </div>
+          <div style="position:absolute;top:8px;left:8px;font-family:var(--font-mono);font-size:9px;color:#ff4444;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;z-index:3">CAM-04 · GATE C</div>
+          <div style="position:absolute;bottom:8px;right:8px;font-family:var(--font-mono);font-size:10px;color:#ff4444;z-index:3">OFFLINE</div>
+        </div>
+        <div class="cam-info">
+          <div class="cam-name">Gate C — Rear Entrance</div>
+          <div class="cam-stats">
+            <span class="cam-stat" style="color:var(--red)">● OFFLINE</span>
+            <span class="cam-stat">Signal lost</span>
+            <span class="cam-stat">RFID active</span>
+            <button class="cam-stat" style="cursor:pointer;color:var(--amber);border-color:rgba(255,179,0,0.3)" onclick="showToast('Attempting to reconnect CAM-04...','warning')">RECONNECT</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<script src="../js/main.js"></script>
+</body>
+</html>
